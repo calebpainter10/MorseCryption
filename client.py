@@ -1,8 +1,7 @@
 # =-- Dependencies --= #
+from util.morse_utils import confirm_sequence, MorseCodeTree
 from util.crypto_utils import encrypt, decrypt
-from util.morse_utils import confirm_sequence
 import gpiozero
-import asyncio
 
 # =-- Static Key --= #
 KEY = b'pGpzH4eWEfjn30EIR40DPA=='
@@ -14,10 +13,10 @@ class Client:
         self.inbox = []
         self.running = True
         self.key = private_key_b64
+        self.morse_code_tree = MorseCodeTree()
+        self.morse_code_tree.populate_tree()
 
-        asyncio.create_task(self._message_loop()) # Immediately start inbox loop
-
-    async def send(self, recipient, plaintext_message, led):
+    def send(self, recipient, plaintext_message, led):
         """
         Sends a message to the recipient.
         :param recipient: A recipient object of class Client
@@ -28,7 +27,7 @@ class Client:
         print(f"[ENCRYPTION/DECRYPTION HANDLER] Encrypting outgoing message from {self.name} to {recipient.name}")
         iv, encrypted_message = encrypt(plaintext_message, self.key)
         print(f"[ENCRYPTION/DECRYPTION HANDLER] Encrypted outgoing message from {self.name} to {recipient.name}: {encrypted_message}")
-        recipient.receive(self.name, encrypted_message, iv, led)
+        recipient.receive(self, encrypted_message, iv, led)
 
     def receive(self, sender, message, iv, led: gpiozero.LED):
         """
@@ -40,34 +39,22 @@ class Client:
         :return: None
         """
         self.inbox.append((sender, message, iv, led))
+        self.process_inbox()
 
-    async def _message_loop(self):
-        """
-        Background async task loop to check for incoming messages
-        :return:
-        """
-        while self.running:
-            if self.inbox: # If there are many messages
-                for sender, message, iv, led in self.inbox: # Log messages
-                    print(f"[MESSAGE HANDLER] ({self.name} -> {sender.name}) | {message}")
-                    print(f"[ENCRYPTION/DECRYPTION HANDLER] Decrypting incoming message from {sender.name}...")
-                    try:
-                        decrypted_message = decrypt(message, iv, self.key)
-                        print(f"[ENCRYPTION/DECRYPTION HANDLER] {self.name} decrypted incoming message from {sender.name}: {decrypted_message}")
-                        print("[ENCRYPTION/DECRYPTION HANDLER] Confirming sequence on LED.")
-                        confirm_sequence(decrypted_message, led)
-                    except Exception as e:
-                        print("[ENCRYPTION/DECRYPTION HANDLER] Error: ", e)
-                self.inbox.clear() # Delete the processed messages
-            await asyncio.sleep(1)
+    def process_inbox(self):
+        if self.inbox:  # If there are many messages
+            for sender, message, iv, led in self.inbox:  # Log messages
+                print(f"[MESSAGE HANDLER] ({self.name} -> {sender.name}) | {message}")
+                print(f"[ENCRYPTION/DECRYPTION HANDLER] Decrypting incoming message from {sender.name}...")
+                try:
+                    decrypted_message = decrypt(message, iv, self.key)
+                    print(
+                        f"[ENCRYPTION/DECRYPTION HANDLER] {self.name} decrypted incoming message from {sender.name}: {decrypted_message}")
+                    print("[ENCRYPTION/DECRYPTION HANDLER] Confirming sequence on LED.")
+                    confirm_sequence(decrypted_message, led)
 
-
-
-async def main():
-    client_a = Client("Client A", KEY)
-    client_b = Client("Client B", KEY)
-
-    await client_a.send(client_b, ".... . .-.. .-.. ---")
-    await client_b.send(client_a, ".... . .-.. .-.. ---")
-
-asyncio.run(main())
+                    decoded_message = self.morse_code_tree.decode(decrypted_message)
+                    print(f"[ENCRYPTION/DECRYPTION HANDLER] Decoded message from  {sender.name}: {decoded_message}")
+                except Exception as e:
+                    print("[ENCRYPTION/DECRYPTION HANDLER] Error: ", e)
+            self.inbox.clear()  # Delete the processed messages
