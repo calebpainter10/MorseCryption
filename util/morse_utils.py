@@ -1,3 +1,7 @@
+# =-- Dependencies --= #
+import gpiozero
+import time
+
 # =-- Morse Code Tree --= #
 MorseCodeDict = {
     'A': '.-', 'B': '-...', 'C': '-.-.',
@@ -91,3 +95,30 @@ class MorseCodeTree:
 
         # Return decoded string
         return " ".join(decoded_string)
+
+def confirm_sequence(code, led: gpiozero.LED):
+    """
+    Flashes an LED on the Rpi to confirm a morse code sequence.
+    :param led: The gpiozero LED
+    :param code:
+    The morse code sequence
+    :return: None
+    """
+    dash_time = 2 # Dash duration
+    dot_time = 0.25 # Dot duration
+    signal_interval = 0.5 # Pause between signals
+    word_interval = 1.5 # Pause between words
+    words = code.split("/")
+    for word in words:
+        for signal in word:
+            match signal:
+                case '.':
+                    led.on()
+                    time.sleep(dot_time)
+                    led.off()
+                case '-':
+                    led.on()
+                    time.sleep(dash_time)
+                    led.off()
+            time.sleep(signal_interval) # Pause between signals
+        time.sleep(word_interval) # Pause between words
