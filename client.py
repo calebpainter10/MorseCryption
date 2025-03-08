@@ -1,5 +1,7 @@
 # =-- Dependencies --= #
 from util.crypto_utils import encrypt, decrypt
+from util.morse_utils import confirm_sequence
+import gpiozero
 import asyncio
 
 # =-- Static Key --= #
@@ -22,10 +24,12 @@ class Client:
         :param plaintext_message: The plaintext message contents.
         :return: None
         """
+        print(f"[ENCRYPTION/DECRYPTION HANDLER] Encrypting outgoing message from {self.name} to {recipient.name}")
         iv, encrypted_message = encrypt(plaintext_message, self.key)
+        print(f"[ENCRYPTION/DECRYPTION HANDLER] Encrypted outgoing message from {self.name} to {recipient.name}: {encrypted_message}")
         recipient.receive(self.name, encrypted_message, iv)
 
-    def receive(self, sender, message, iv):
+    def receive(self, sender, message, iv, led: gpiozero.LED):
         """
         Adds a message to the inbox.
         :param sender: The sender object of class Client.
@@ -33,7 +37,7 @@ class Client:
         :param iv: The initial initialization vector.
         :return: None
         """
-        self.inbox.append((sender, message, iv))
+        self.inbox.append((sender, message, iv, led))
 
     async def _message_loop(self):
         """
@@ -42,12 +46,14 @@ class Client:
         """
         while self.running:
             if self.inbox: # If there are many messages
-                for sender, message, iv in self.inbox: # Log messages
-                    print(f"[MESSAGE HANDLER] ({self.name} -> {sender}) | {message}")
-                    print(f"[ENCRYPTION/DECRYPTION HANDLER] Decrypting incoming message from {sender}...")
+                for sender, message, iv, led in self.inbox: # Log messages
+                    print(f"[MESSAGE HANDLER] ({self.name} -> {sender.name}) | {message}")
+                    print(f"[ENCRYPTION/DECRYPTION HANDLER] Decrypting incoming message from {sender.name}...")
                     try:
                         decrypted_message = decrypt(message, iv, self.key)
-                        print(f"[ENCRYPTION/DECRYPTION HANDLER] {self.name} decrypted incoming message from {sender}: {decrypted_message}")
+                        print(f"[ENCRYPTION/DECRYPTION HANDLER] {self.name} decrypted incoming message from {sender.name}: {decrypted_message}")
+                        print("[ENCRYPTION/DECRYPTION HANDLER] Confirming sequence on LED.")
+                        confirm_sequence(decrypted_message, led)
                     except Exception as e:
                         print("[ENCRYPTION/DECRYPTION HANDLER] Error: ", e)
                 self.inbox.clear() # Delete the processed messages
