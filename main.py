@@ -1,9 +1,8 @@
 # =-- Dependencies --= #
 from util.morse_utils import MorseCodeTree
+from time import time, sleep
 from client import Client
-from time import time
 import gpiozero
-import asyncio
 
 # =-- Constant Settings --= #
 KEY_BYTES = b'\xa4js\x1f\x87\x96\x11\xf8\xe7\xdfA\x08G\x8d\x03<'
@@ -14,10 +13,10 @@ connection_established = True
 # =-- Hardware --= #
 yellow_led = gpiozero.LED(14)
 green_led = gpiozero.LED(15)
-button = gpiozero.LED(18)
+button = gpiozero.Button(18)
 
 # =-- Input Morse Code --= #
-async def input_morse_code():
+def input_morse_code():
     listen = True
 
     print("You may input your morse code message using the Raspberry Pi button now.")
@@ -60,7 +59,8 @@ async def input_morse_code():
     return "".join(input_code)
 
 # =-- Main Function --= #
-async def main():
+def main():
+    global connection_established
     client1_name = input("What would you like to call Client 1?")
     client1 = Client(client1_name, KEY_BASE64)
 
@@ -73,11 +73,12 @@ async def main():
     print(f"[CONNECTION HANDLER] {client1_name} and {client2_name} are connected.")
 
     morse_tree = MorseCodeTree()
+    morse_tree.populate_tree()
 
     while connection_established:
         # Input morse code
         print("[CONNECTION HANDLER] You are currently: ", sending_client.name)
-        morse_code = await input_morse_code()
+        morse_code = input_morse_code()
 
         # Process input
         print("[CONNECTION HANDLER] Reminder - you are currently: ", sending_client.name)
@@ -85,16 +86,14 @@ async def main():
         print("This message decodes in English to: ", morse_tree.decode(morse_code))
 
         # Encrypt and send message
-        await sending_client.send(receiving_client, morse_code, led=green_led)
+        sending_client.send(receiving_client, morse_code, green_led)
 
         # Flip clients
         sending_client, receiving_client = receiving_client, sending_client
 
-        # Ask user if they would like to terminate the connection
-        terminate_input = input("Would you like to terminate the connection now? y/N")
-        if terminate_input == "y":
-            connection_established = False
-        else:
-            continue
+        print("[CONNECTION HANDLER] Message fully processed.")
+        yellow_led.on()
+        sleep(1)
+        yellow_led.off()
 
-asyncio.run(main())
+main()
