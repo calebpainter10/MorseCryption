@@ -1,8 +1,8 @@
 # =-- Dependencies --= #
 from util.morse_utils import MorseCodeTree
-from gpiozero import Button
 from client import Client
 from time import time
+import gpiozero
 import asyncio
 
 # =-- Constant Settings --= #
@@ -11,10 +11,12 @@ KEY_BASE64 = b'pGpzH4eWEfjn30EIR40DPA=='
 
 connection_established = True
 
-# =-- Input Morse Code --= #
-button = Button(14)
+# =-- Hardware --= #
+yellow_led = gpiozero.LED(14)
+green_led = gpiozero.LED(15)
+button = gpiozero.LED(18)
 
-# Main button code
+# =-- Input Morse Code --= #
 async def input_morse_code():
     listen = True
 
@@ -83,7 +85,7 @@ async def main():
         print("This message decodes in English to: ", morse_tree.decode(morse_code))
 
         # Encrypt and send message
-        await sending_client.send(receiving_client, morse_code)
+        await sending_client.send(receiving_client, morse_code, led=green_led)
 
         # Flip clients
         sending_client, receiving_client = receiving_client, sending_client
