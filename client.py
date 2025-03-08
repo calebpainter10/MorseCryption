@@ -17,17 +17,18 @@ class Client:
 
         asyncio.create_task(self._message_loop()) # Immediately start inbox loop
 
-    async def send(self, recipient, plaintext_message):
+    async def send(self, recipient, plaintext_message, led):
         """
         Sends a message to the recipient.
         :param recipient: A recipient object of class Client
         :param plaintext_message: The plaintext message contents.
+        :param led: The LED to verify.
         :return: None
         """
         print(f"[ENCRYPTION/DECRYPTION HANDLER] Encrypting outgoing message from {self.name} to {recipient.name}")
         iv, encrypted_message = encrypt(plaintext_message, self.key)
         print(f"[ENCRYPTION/DECRYPTION HANDLER] Encrypted outgoing message from {self.name} to {recipient.name}: {encrypted_message}")
-        recipient.receive(self.name, encrypted_message, iv)
+        recipient.receive(self.name, encrypted_message, iv, led)
 
     def receive(self, sender, message, iv, led: gpiozero.LED):
         """
@@ -35,6 +36,7 @@ class Client:
         :param sender: The sender object of class Client.
         :param message: The message contents.
         :param iv: The initial initialization vector.
+        :param led: The LED to verify.
         :return: None
         """
         self.inbox.append((sender, message, iv, led))
