@@ -1,5 +1,5 @@
 # =-- Dependencies --= #
-from db.db import create_or_get_client, create_message
+from db.db import create_or_get_client, create_message, get_client_by_name
 from util.morse_utils import confirm_sequence, MorseCodeTree
 from util.crypto_utils import encrypt, decrypt
 import gpiozero
@@ -39,8 +39,8 @@ class Client:
         :param led: The LED to verify.
         :return: None
         """
-        receiver_client = create_or_get_client(self.name, self.auth_key)
-        sender_client = create_or_get_client(sender.name, sender.auth_key)
+        receiver_client = get_client_by_name(self.name)
+        sender_client = get_client_by_name(sender.name)
 
         create_message(message, "sent", sender_client.id, receiver_client.id, self.auth_key, iv)
 
