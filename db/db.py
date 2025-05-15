@@ -176,7 +176,7 @@ def get_client_by_id(client_id):
 
     # Check if client exists
     if not client:
-        None
+        return None
 
     return client
 
@@ -186,7 +186,7 @@ def get_client_by_name(client_name):
     :param client_name: The name of the requested client.
     :return: A client object, or None if it does not exist.
     """
-    client = session.get(Client, client_name)
+    client = session.query(Client).filter_by(name=client_name).first()
 
     if not client:
         return None
