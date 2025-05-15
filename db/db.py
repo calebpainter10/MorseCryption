@@ -284,6 +284,6 @@ def list_clients_messages(client: Client):
     :param client: An object of the client to query
     :return: A list of messages.
     """
-    messages = session.query(Message).filter_by(client=client).all()
+    messages = session.query(Message).filter_by(sender_id=client.id).all()
 
     return messages
