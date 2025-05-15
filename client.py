@@ -1,4 +1,5 @@
 # =-- Dependencies --= #
+from db.db import create_or_get_client, create_message
 from util.morse_utils import confirm_sequence, MorseCodeTree
 from util.crypto_utils import encrypt, decrypt
 import gpiozero
@@ -8,13 +9,16 @@ KEY = b'pGpzH4eWEfjn30EIR40DPA=='
 
 # =-- Client Class --= #
 class Client:
-    def __init__(self, name, private_key_b64):
+    def __init__(self, name, private_key_b64, auth_key_b64):
         self.name = name
         self.inbox = []
         self.running = True
         self.key = private_key_b64
+        self.auth_key = auth_key_b64
         self.morse_code_tree = MorseCodeTree()
         self.morse_code_tree.populate_tree()
+
+        create_or_get_client(name, auth_key_b64) # Create client in DB if it does not already exist
 
     def send(self, recipient, plaintext_message, led):
         """
@@ -25,7 +29,7 @@ class Client:
         :return: None
         """
         print(f"[ENCRYPTION/DECRYPTION HANDLER] Encrypting outgoing message from {self.name} to {recipient.name}")
-        iv, encrypted_message = encrypt(plaintext_message, self.key)
+        iv, encrypted_message = encrypt(plaintext_message, recipient.key) # Encrypt using recipient's key
         print(f"[ENCRYPTION/DECRYPTION HANDLER] Encrypted outgoing message from {self.name} to {recipient.name}: {encrypted_message}")
         recipient.receive(self, encrypted_message, iv, led)
 
@@ -38,6 +42,11 @@ class Client:
         :param led: The LED to verify.
         :return: None
         """
+        receiver_client = create_or_get_client(self.name, self.auth_key)
+        sender_client = create_or_get_client(sender.name, sender.auth_key)
+
+        create_message(message, "sent", sender_client.id, receiver_client.id, self.auth_key, iv)
+
         self.inbox.append((sender, message, iv, led))
         self.process_inbox()
 
