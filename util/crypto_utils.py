@@ -2,6 +2,7 @@
 from Crypto.Random import get_random_bytes
 from Crypto.Util import Padding
 from Crypto.Cipher import AES
+import hashlib
 import base64
 
 # =-- KEY --= #
@@ -60,3 +61,27 @@ def decrypt(ciphertext_b64: str, iv_b64: str, key_b64: bytes):
 
     return plaintext_unpadded.decode()
 
+def hash_sha512(text: str):
+    """
+    Hashes the given text using SHA-512,
+    splitting into an authentication key (32 bytes) and an encryption key (16 bytes).
+    :param text: The unhashed text
+    :return: (16 byte encryption key, 32 byte authentication key)
+    """
+    full_hash = hashlib.sha512(text.encode()).digest()
+
+    k_auth = base64.b64encode(full_hash[:32]).decode()
+    k_enc = base64.b64encode(full_hash[32:48]).decode() # Only 16 bytes for AES 128 support
+
+    return k_enc, k_auth
+
+def verify_password(plaintext_password: str, k_auth: str) -> bool:
+    """
+    Verifies a given plaintext password against an authentication key.
+    :param plaintext_password: The plaintext password to verify.
+    :param k_auth: The authentication key to verify.
+    :return: True/False
+    """
+    _, given_auth = hash_sha512(plaintext_password)
+
+    return given_auth == k_auth
