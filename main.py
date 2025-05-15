@@ -68,17 +68,19 @@ def authentication_flow():
         client1_master_password = input(f"What would you like to set as {client1_name}'s master password?")
         client1_enckey, client1_authkey = hash_sha512(client1_master_password)
 
-        if not verify_client_by_name(client1_name, client1_authkey):
-            print("Client 1 unable to be authenticated.")
-            continue
+        if get_client_by_name(client1_name):
+            if not verify_client_by_name(client1_name, client1_authkey):
+                print("Client 1 unable to be authenticated.")
+                continue
 
         client2_name = input("What would you like to call Client 2?")
         client2_master_password = input(f"What would you like to set as {client2_name}'s master password?")
         client2_enckey, client2_authkey = hash_sha512(client2_master_password)
 
-        if not verify_client_by_name(client2_name, client2_authkey):
-            print("Client 1 password incorrect.")
-            continue
+        if get_client_by_name(client2_name):
+            if not verify_client_by_name(client2_name, client2_authkey):
+                print("Client 1 password incorrect.")
+                continue
 
         client1 = Client(client1_name, client1_enckey, client1_authkey)
         client2 = Client(client2_name, client2_enckey, client2_authkey)
