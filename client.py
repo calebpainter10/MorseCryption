@@ -4,9 +4,6 @@ from util.morse_utils import confirm_sequence, MorseCodeTree
 from util.crypto_utils import encrypt, decrypt
 import gpiozero
 
-# =-- Static Key --= #
-KEY = b'pGpzH4eWEfjn30EIR40DPA=='
-
 # =-- Client Class --= #
 class Client:
     def __init__(self, name, private_key_b64, auth_key_b64):
