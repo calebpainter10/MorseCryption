@@ -181,8 +181,15 @@ def database_flow():
                 print("Verification failed.")
                 continue
 
+            morse_tree = MorseCodeTree()
+            morse_tree.populate_tree()
+
             decrypted_message = decrypt(message.content, message.iv, k_enc)
+            decoded_message = morse_tree.decode(decrypted_message)
+
             print(f"Decrypted message: {decrypted_message}")
+            print(f"Decoded message: {decoded_message}")
+
 
             sleep(3)
 
